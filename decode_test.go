@@ -22,6 +22,12 @@ type T struct {
 	Z int `json:"-"`
 }
 
+type Tok struct {
+	X         string
+	Y         int
+	OtherKeys OtherKeys
+}
+
 type U struct {
 	Alphabet string `json:"alpha"`
 }
@@ -249,6 +255,10 @@ var unmarshalTests = []unmarshalTest{
 	// Z has a "-" tag.
 	{in: `{"Y": 1}`, ptr: new(T), out: T{Y: 1}},
 	{in: `{"Y": 1, "Z": 2}`, ptr: new(T), out: T{Y: 1}, err: errors.New("JSON decoder found unexpected key: Z")},
+	{in: `{"Y": 1, "#Z": 2}`, ptr: new(T), out: T{Y: 1}},
+
+	// OtherKeys
+	{in: `{"Y": 1, "Z": 2}`, ptr: new(Tok), out: Tok{Y: 1, OtherKeys: OtherKeys{"Z"}}},
 
 	{in: `{"alpha": "abc", "alphabet": "xyz"}`, ptr: new(U), out: U{Alphabet: "abc"}, err: errors.New("JSON decoder found unexpected key: alphabet")},
 	{in: `{"alpha": "abc"}`, ptr: new(U), out: U{Alphabet: "abc"}},

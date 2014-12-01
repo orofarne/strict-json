@@ -128,6 +128,9 @@ func (e *InvalidUnmarshalError) Error() string {
 	return "json: Unmarshal(nil " + e.Type.String() + ")"
 }
 
+// A OtherKeys describes a set of unexpected JSON keys
+type OtherKeys []string
+
 func (d *decodeState) unmarshal(v interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -553,7 +556,19 @@ func (d *decodeState) object(v reflect.Value) {
 						subv = subv.Field(i)
 					}
 				} else {
-					d.error(fmt.Errorf("JSON decoder found unexpected key: %s", key))
+					// Check OtherKeys
+					foundOK := false
+					for i := 0; i < v.NumField(); i++ {
+						fv := v.Field(i)
+						if fv.Type() == reflect.TypeOf(OtherKeys{}) {
+							kv := reflect.ValueOf(string(key))
+							fv.Set(reflect.Append(fv, kv))
+							foundOK = true
+						}
+					}
+					if !foundOK {
+						d.error(fmt.Errorf("JSON decoder found unexpected key: %s", key))
+					}
 				}
 			}
 		}
